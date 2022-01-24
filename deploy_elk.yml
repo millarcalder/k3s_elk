@@ -1,0 +1,114 @@
+- name: Start services
+  hosts: localhost
+  vars:
+    ansible_python_interpreter: ./.virtualenv/bin/python
+    aws_secret_key: !vault |
+                    $ANSIBLE_VAULT;1.1;AES256
+                    31303161353136396264623032346464663638306431613065356332616362643066653731313933
+                    3433633137663037386465643531373534613230653837360a393930306537656130326465323934
+                    36346638376433663261646238373666646136353036343965623235376565353563393537366134
+                    3730623639356533630a363036386163643234316665396665373165393433623334316633313030
+                    31613535333262336330333763623064643164363036386365336434653366666537313666653063
+                    3765363730346135366162613963306237633932346331333231
+    aws_access_key: !vault |
+                    $ANSIBLE_VAULT;1.1;AES256
+                    65303733303630626434646131303038323165373032663264626661373566343366373336666366
+                    6534323335653933663939653962343732313731613033310a353739666363633663393932363664
+                    66383163393632653234363033343137323231393139373866323733313131646233623934383364
+                    6433373837656564330a343463316434376230333736623465383662346130343834353361336432
+                    62353539623765383033396535393438386537613366346535626363313165623566
+
+  tasks:
+    - name: Download k8s elasticsearch crds.yaml
+      get_url:
+        url: https://download.elastic.co/downloads/eck/1.8.0/crds.yaml
+        dest: /tmp/crds.yaml
+
+    - name: Download k8s elasticsearch operator.yaml
+      get_url:
+        url: https://download.elastic.co/downloads/eck/1.8.0/operator.yaml
+        dest: /tmp/operator.yaml
+    
+    - name: Apply elasticsearch crds.yaml
+      kubernetes.core.k8s:
+        state: present
+        src: /tmp/crds.yaml
+
+    - name: Apply elasticsearch operator.yaml
+      kubernetes.core.k8s:
+        state: present
+        src: /tmp/operator.yaml
+
+    - name: Make civilstonks namespace
+      become: yes
+      kubernetes.core.k8s:
+        state: present
+        kubeconfig: ~/.kube/config
+        definition:
+          apiVersion: v1
+          kind: Namespace
+          metadata:
+            name: civilstonks
+
+    - name: Start elasticsearch
+      become: yes
+      kubernetes.core.k8s:
+        state: present
+        kubeconfig: ~/.kube/config
+        namespace: civilstonks
+        resource_definition:
+          apiVersion: elasticsearch.k8s.elastic.co/v1
+          kind: Elasticsearch
+          metadata:
+            name: civilstonks
+          spec:
+            version: 7.15.2
+            nodeSets:
+            - name: default
+              count: 3
+              config:
+                node.store.allow_mmap: false
+              podTemplate:
+                spec:
+                  initContainers:
+                  - name: install-plugins
+                    command:
+                    - sh
+                    - -c
+                    - bin/elasticsearch-plugin install --batch repository-s3
+                  - name: init-keystore
+                    command:
+                    - sh
+                    - -c
+                    - bin/elasticsearch-keystore create
+                  - name: add-aws-access-key
+                    command:
+                    - sh
+                    - -c
+                    - echo {{ aws_access_key }} | bin/elasticsearch-keystore add --stdin s3.client.default.access_key
+                  - name: add-aws-secret-key
+                    command:
+                    - sh
+                    - -c
+                    - "echo {{ aws_secret_key }} | bin/elasticsearch-keystore add --stdin s3.client.default.secret_key"
+
+    - name: Start kibana
+      become: yes
+      kubernetes.core.k8s:
+        state: present
+        kubeconfig: ~/.kube/config
+        namespace: civilstonks
+        definition:
+          apiVersion: kibana.k8s.elastic.co/v1
+          kind: Kibana
+          metadata:
+            name: civilstonks-kibana
+          spec:
+            version: 7.15.2
+            count: 1
+            elasticsearchRef:
+              name: civilstonks
+            http:
+              service:
+                spec:
+                  type: LoadBalancer

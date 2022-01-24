@@ -2,14 +2,12 @@
 
 This is an ansible project used for deploying the elastic stack to raspberry pi's.
 
-Currently it will just deploy to a single device but the plan is to deploy to a cluster of devices in the future, likely using a container orchestration service like kubernetes.
-
-## Requirements
-
- - 64bit OS, I've been using [Ubuntu Server](https://ubuntu.com/download/server)
+https://www.elastic.co/guide/en/cloud-on-k8s/current/index.html
 
 ## Usage
 
-You will need to have SSH setup on the remote machine, see this link for instructions https://www.ssh.com/academy/ssh/copy-id.
+Currently this is only intended to be used with a raspberry pi 4.
 
-Then you should be able to run the ansible playbook with a inventory file `ansible-playbook playbook.yml -i production.yml`.
+1. setup SSH on the remote machine, see [this link](https://www.ssh.com/academy/ssh/copy-id) for instructions
+2. run the `setup_raspberry_pi` ansible playbook, `ansible-playbook playbook.yml -i production.yml`
+3. run the `deploy_elk` ansible playbook, `ansible-playbook deploy_elk.yml -i production.yml`

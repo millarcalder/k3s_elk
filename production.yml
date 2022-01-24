@@ -1,2 +1,0 @@
-[webservers]
-rp01 ansible_connection=ssh ansible_host=192.168.88.152 ansible_user=ubuntu

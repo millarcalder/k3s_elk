@@ -112,3 +112,6 @@
               service:
                 spec:
                   type: LoadBalancer
+              tls:
+                selfSignedCertificate:
+                  disabled: true

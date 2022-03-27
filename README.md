@@ -1,13 +1,13 @@
 # civilstonks-elk
 
-This is an ansible project used for deploying the elastic stack to raspberry pi's.
+This project contains ansible playbook I use for deploying the [Elastic Stack (elk)](https://www.elastic.co/guide/en/cloud-on-k8s/current/index.html) to my Kubernetes cluster.
 
-https://www.elastic.co/guide/en/cloud-on-k8s/current/index.html
+## Deploy Elastic Stack
 
-## Usage
+This playbook is run on your local machine, you will need to have kubectl configured to use the Kubernetes cluster you want to deploy to ([see here for instructions](https://kubernetes.io/docs/tasks/access-application-cluster/access-cluster/)).
 
-Currently this is only intended to be used with a raspberry pi 4.
+Once you have kubectl configured, run the `deploy_elk` ansible playbook, `ansible-playbook deploy_elk.yml --ask-become-pass --ask-vault-password`
 
-1. setup SSH on the remote machine, see [this link](https://www.ssh.com/academy/ssh/copy-id) for instructions
-2. run the `setup_raspberry_pi` ansible playbook, `ansible-playbook playbook.yml -i production.yml --ask-become-pass`
-3. run the `deploy_elk` ansible playbook, `ansible-playbook deploy_elk.yml -i production.yml --ask-become-pass --ask-vault-password`
+### Running locally
+
+If you wish to run the Elastic Stack on your local machine you can install [Minikube](https://minikube.sigs.k8s.io/docs/start/). To access kibana you will need to run the [tunnel command](https://minikube.sigs.k8s.io/docs/handbook/accessing/).

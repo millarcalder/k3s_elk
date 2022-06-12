@@ -39,8 +39,7 @@
         state: present
         src: /tmp/operator.yaml
 
-    - name: Make civilstonks namespace
-      become: yes
+    - name: Ensure namespace exists
       kubernetes.core.k8s:
         state: present
         kubeconfig: ~/.kube/config
@@ -48,19 +47,18 @@
           apiVersion: v1
           kind: Namespace
           metadata:
-            name: civilstonks
+            name: '{{ namespace }}'
 
     - name: Start elasticsearch
-      become: yes
       kubernetes.core.k8s:
         state: present
         kubeconfig: ~/.kube/config
-        namespace: civilstonks
+        namespace: '{{ namespace }}'
         resource_definition:
           apiVersion: elasticsearch.k8s.elastic.co/v1
           kind: Elasticsearch
           metadata:
-            name: civilstonks
+            name: elasticsearch
           spec:
             version: 7.15.2
             nodeSets:
@@ -93,21 +91,20 @@
                     - "echo {{ aws_secret_key }} | bin/elasticsearch-keystore add --stdin s3.client.default.secret_key"
 
     - name: Start kibana
-      become: yes
       kubernetes.core.k8s:
         state: present
         kubeconfig: ~/.kube/config
-        namespace: civilstonks
+        namespace: '{{ namespace }}'
         definition:
           apiVersion: kibana.k8s.elastic.co/v1
           kind: Kibana
           metadata:
-            name: civilstonks-kibana
+            name: kibana
           spec:
             version: 7.15.2
             count: 1
             elasticsearchRef:
-              name: civilstonks
+              name: elasticsearch
             http:
               service:
                 spec:
